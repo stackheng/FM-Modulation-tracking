@@ -38,8 +38,7 @@ extern ADC_HandleTypeDef hadc1;
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
-u16 Get_Adc(u32 ch);
-u16 Get_Adc_Average(u32 ch,u8 times);
+
 /* USER CODE BEGIN Prototypes */
 
 /* USER CODE END Prototypes */

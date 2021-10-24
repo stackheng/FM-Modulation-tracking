@@ -20,15 +20,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "tim.h"
 #include "adc.h"
-#include "stdio.h"
 /* USER CODE BEGIN 0 */
 extern u16 ADC_threshold;
 //u8 tracking_flag=0;换了一种方法
-u32 fre=35000000;
+u32 fre=50000000;
 extern u16 step_fre;
-u16 temp=0;
-u32 fre_max=0;
-u16 new_val=0;
+//u16 temp=0;
+//u32 fre_max=0;
+//u16 new_val=0;
 u8 sweep_finish=0;
 /* USER CODE END 0 */
 
@@ -90,7 +89,7 @@ void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 84-1;
+  htim4.Init.Prescaler = 8400-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 1000-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -143,7 +142,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     __HAL_RCC_TIM4_CLK_ENABLE();
 
     /* TIM4 interrupt Init */
-    HAL_NVIC_SetPriority(TIM4_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(TIM4_IRQn, 2, 0);
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
   /* USER CODE BEGIN TIM4_MspInit 1 */
 
@@ -201,24 +200,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //			tracking_flag=0;
 //			printf("未捕获");
 //		}
-			new_val=Get_Adc(ADC_CHANNEL_5);
-			if(new_val>temp)//比较找最大值。如果新的值大于temp，我就赋给它，只要新值比temp大，就赋给temp,保证temp是最大的值，如果新值小了，就跳过没用，我们只要最大时刻的频率。
-			{
-				temp=new_val;
-				fre_max=fre;
-			}
+//			new_val=Get_Adc(ADC_CHANNEL_5);
+//			if(new_val>temp)//比较找最大值。如果新的值大于temp，我就赋给它，只要新值比temp大，就赋给temp,保证temp是最大的值，如果新值小了，就跳过没用，我们只要最大时刻的频率。
+//			{
+//				temp=new_val;
+//				fre_max=fre;
+//			}
 			
 	}
 	else if(htim==&htim4)
 	{
-		if(fre<42000000)
+		if(fre<52000000)
 		{
 			fre=fre+step_fre;
 		}
 		else
 		{
-			fre=35000000;
+			HAL_ADC_Stop_IT(&hadc1);
 			sweep_finish=1;
+			
 		}
 	}
 }

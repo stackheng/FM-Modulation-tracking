@@ -23,8 +23,8 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "AD9959.H"
 #include "stdio.h"
+#include "AD9959.H"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -49,10 +49,12 @@
 /* USER CODE BEGIN PV */
 //u16 ADC_threshold=800;不用阈值判断法这样不太稳定
 extern u32 fre;
-u16 step_fre=1000;
-extern u32 fre_max;
+u16 step_fre=10000;
+u32 fre_max=0;
 //extern u8 tracking_flag;
 extern u8 sweep_finish;
+u16 temp=0;
+u16 new_val=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -87,7 +89,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-	
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -100,10 +102,13 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 	Init_AD9959();
-	
-	AD9959_Set_Freq(40700000);
-//	HAL_TIM_Base_Start_IT(&htim3);
-//	HAL_TIM_Base_Start_IT(&htim4);
+	AD9959_Set_Freq(50700000);
+	Write_Amplitude(1,1023);
+	//Write_frequence(1,40700000);
+	//AD9959_Set_Freq(40700000);
+	//HAL_TIM_Base_Start_IT(&htim3);
+	HAL_ADC_Start_IT(&hadc1);
+	HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,15 +128,29 @@ int main(void)
 //			AD9959_Set_Freq(fre);
 //			HAL_TIM_Base_Start_IT(&htim4);
 //		}
-		if(sweep_finish==1)//如果扫完，停止扫描，输出此时ADC采样最大的频率，然后开启扫描
+			
+//			new_val=Get_Adc(ADC_CHANNEL_5);
+//			if(new_val>temp)//比较找最大值。如果新的值大于temp，我就赋给它，只要新值比temp大，就赋给temp,保证temp是最大的值，如果新值小了，就跳过没用，我们只要最大时刻的频率。
+//			{
+//				temp=new_val;
+//				fre_max=fre;
+//			}
+		if(sweep_finish)//如果扫完，停止扫描，输出此时ADC采样最大的频率，然后开启扫描
 		{
+			//temp=0;
 			HAL_TIM_Base_Stop_IT(&htim4);
 			AD9959_Set_Freq(fre_max);
-			HAL_Delay(2000);
-			HAL_TIM_Base_Start_IT(&htim4);
+//			HAL_Delay(2000);
+//			HAL_TIM_Base_Start_IT(&htim4);
+//			sweep_finish=0;
+			
 		}
 		else
-			AD9959_Set_Freq(fre);//如果没有扫完。DDS输出随时间线性变化的频率，只为找到ADC值最大的频点
+			{
+				
+				AD9959_Set_Freq(fre);//如果没有扫完。DDS输出随时间线性变化的频率，只为找到ADC值最大的频点
+			}
+			
   }
   /* USER CODE END 3 */
 }
@@ -180,7 +199,19 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	if(hadc==&hadc1)
+	{
+			new_val=HAL_ADC_GetValue(&hadc1);
+			if(new_val>temp)//比较找最大值。如果新的值大于temp，我就赋给它，只要新值比temp大，就赋给temp,保证temp是最大的值，如果新值小了，就跳过没用，我们只要最大时刻的频率。
+			{
+				temp=new_val;
+				fre_max=fre;
+			}
+			HAL_ADC_Start_IT(&hadc1);
+	}
+}
 /* USER CODE END 4 */
 
 /**
